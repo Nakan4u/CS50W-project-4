@@ -1,8 +1,10 @@
+from django.core.serializers import serialize
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+from rest_framework.response import Response
 import json
 
 from .models import User, Post
@@ -62,16 +64,24 @@ def register(request):
     else:
         return render(request, "network/register.html")
 
-def posts(request):
-    if request.method != "POST":
-        return render(request, "index.html")
-    
-    data = json.loads(request.body)
+def get_posts(request):
+    start = int(request.GET.get("start"))
+    end = int(request.GET.get("end"))
 
-    post = Post(
-        author=request.user,
-        message=data['message']
-    )
+    if Post.objects.count() >= (end-start) or start == None or end == None:
+        qs = Post.objects.all()
+    else:
+        qs = Post.objects.all()[start:end]
+
+    response = serialize("json", qs, use_natural_foreign_keys=True)
+    return HttpResponse(response, content_type='application/json')
+
+def submit_post(request):
+    if request.method != "POST":
+        return render(request, "index.html")  
+
+    data = json.loads(request.body)
+    post = Post(author=request.user, message=data['message'])
     post.save()
 
     return JsonResponse(data)

@@ -2,7 +2,7 @@
 {% load static %}
 {% block body %}
     {% if request.user.is_authenticated %}
-        <div id="post-div">
+        <div id="post-form-div">
             <form id="post-form">
                 {% csrf_token %}
                 <textarea id="post-form-msg" class="form-control m-1"></textarea>
@@ -10,6 +10,10 @@
             </form>
         </div>
     {% endif %}
+
+    <div id="post-display-div">
+    </div>
+
 {% endblock %}
 
 {% block script %}
