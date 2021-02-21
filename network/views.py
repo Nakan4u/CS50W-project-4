@@ -83,5 +83,5 @@ def submit_post(request):
     data = json.loads(request.body)
     post = Post(author=request.user, message=data['message'])
     post.save()
-
-    return JsonResponse(data)
+    response = serialize("json", [post], ensure_ascii=False, use_natural_foreign_keys=True)
+    return HttpResponse(response[1:-1], content_type='application/json')

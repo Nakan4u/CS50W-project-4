@@ -34,12 +34,11 @@ function load_posts() {
   fetch(`/posts?start=${start}&end=${end}`)
   .then(response => response.json())
   .then(data => {
-    console.log(data);
-    data.forEach(add_post_to_DOM);
+    data.forEach(post => add_post_to_DOM(post, 'end'));
   })
 }
 
-function add_post_to_DOM(contents) {
+function add_post_to_DOM(contents, position = 'end') {
   const post = document.createElement('div');
   const title = document.createElement('h5');
   const timestamp = document.createElement('h6');
@@ -62,8 +61,12 @@ function add_post_to_DOM(contents) {
   const wrapper = document.createElement('div');
   wrapper.className = 'card';
   wrapper.appendChild(post);
-  document.querySelector('#post-display-div').append(wrapper);
-
+  console.log(position)
+  if (position === 'end') {
+    document.querySelector('#post-display-div').append(wrapper);
+  } else {
+    document.querySelector('#post-display-div').prepend(wrapper);
+  }
   counter++;
 }
 
@@ -84,7 +87,8 @@ function submit_post(event) {
     })
   })
   .then(response => response.json())
-  .then(data => {
-    console.log(data)
+  .then(post => {
+    console.log(post)
+    add_post_to_DOM(post, 'front');
   })
 }
