@@ -4,8 +4,6 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
-from rest_framework.response import Response
-import json
 
 from .models import User, Post
 
@@ -64,24 +62,34 @@ def register(request):
     else:
         return render(request, "network/register.html")
 
+def get_user_profile(request, username):
+    query = User.objects.get(username=username)
+    return HttpResponse(query)
+
 def get_posts(request):
     start = int(request.GET.get("start"))
     end = int(request.GET.get("end"))
+    user = request.GET.get("user") or None
 
-    if Post.objects.count() >= (end-start) or start == None or end == None:
-        qs = Post.objects.all()
+    if user:
+        user_obj = User.objects.get(username=user)
+        posts = Post.objects.filter(author=user_obj)[start:end]
     else:
-        qs = Post.objects.all()[start:end]
+        posts = Post.objects.all()[start:end]
 
-    response = serialize("json", qs, use_natural_foreign_keys=True)
-    return HttpResponse(response, content_type='application/json')
+    serializer = serialize("json", posts, use_natural_foreign_keys=True)
+    return HttpResponse(serializer, content_type='application/json')
+
 
 def submit_post(request):
     if request.method != "POST":
         return render(request, "index.html")  
 
+    # Add new post to DB
     data = json.loads(request.body)
     post = Post(author=request.user, message=data['message'])
     post.save()
+
+    # Respond with the new post in JSON
     response = serialize("json", [post], ensure_ascii=False, use_natural_foreign_keys=True)
     return HttpResponse(response[1:-1], content_type='application/json')

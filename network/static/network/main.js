@@ -1,12 +1,17 @@
 let post_counter = 0;
-const posts_per_request = 20;
+const posts_per_request = 100;
 
 document.addEventListener('DOMContentLoaded', () => {
+  document.querySelector('#index-nav-link').addEventListener('click', () => {
+    load_view('index');
+  })
+
   const postForm = document.querySelector('#post-form')
   if (postForm) {
     postForm.addEventListener('submit', submit_post);
   }
-  load_posts();
+
+  load_view('index');
 })
 
 function getCookie(name) {
@@ -24,30 +29,70 @@ function getCookie(name) {
   }
   return cookieValue;
 }
+
 const csrftoken = getCookie('csrftoken');
 
-function load_posts() {
+function load_posts(user = null, feed = false) {
   const start = post_counter;
   const end = post_counter + posts_per_request;
   counter = end + 1;
 
-  fetch(`/posts?start=${start}&end=${end}`)
+  let url = `/posts?start=${start}&end=${end}`;
+
+  if (user) {
+    url = url.concat(`&user=${user}`);
+  }
+
+  fetch(url)
   .then(response => response.json())
   .then(data => {
     data.forEach(post => add_post_to_DOM(post, 'end'));
   })
 }
 
+
+function load_view(view) {
+  document.querySelector('#post-display-div').innerHTML = "";
+  post_counter = 0;
+
+  const profile_div = document.querySelector('#profile-div');
+  profile_div.style.display = view === 'profile' ? 'block' : 'none';
+
+  const post_form_div = document.querySelector('#post-form-div');
+  post_form_div.style.display = view === 'index' ? 'block' : 'none';
+
+  if (view === 'index') {
+    post_form_div.style.display = 'block';
+    profile_div.style.display = 'none';
+    load_posts();
+  } else if (view === 'profile') {
+    post_form_div.style.display = 'none';
+    profile_div.style.display = 'block';
+    console.log(document.querySelector('#profile-div-title').innerHTML);
+    load_posts(document.querySelector('#profile-div-title').innerHTML);
+  }
+}
+
+
 function add_post_to_DOM(contents, position = 'end') {
   const post = document.createElement('div');
-  const title = document.createElement('h5');
+  
   const timestamp = document.createElement('h6');
   const body = document.createElement('div');
   
   post.className = 'post card-body';
 
+  // Card title
+  const title = document.createElement('h5');
   title.className = 'card-title';
   title.innerHTML = contents["fields"]["author"];
+  title.addEventListener('click', () => {
+    fetch(`user/${title.innerHTML}`)
+    .then(() => {
+      document.querySelector('#profile-div-title').innerHTML = contents["fields"]["author"];
+      load_view('profile');
+    })
+  })
   post.appendChild(title);
   
   timestamp.className = 'card-subtitle mb-2 text-muted';
@@ -61,7 +106,7 @@ function add_post_to_DOM(contents, position = 'end') {
   const wrapper = document.createElement('div');
   wrapper.className = 'card';
   wrapper.appendChild(post);
-  console.log(position)
+
   if (position === 'end') {
     document.querySelector('#post-display-div').append(wrapper);
   } else {
@@ -88,7 +133,6 @@ function submit_post(event) {
   })
   .then(response => response.json())
   .then(post => {
-    console.log(post)
     add_post_to_DOM(post, 'front');
   })
 }

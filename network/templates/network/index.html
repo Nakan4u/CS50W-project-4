@@ -1,15 +1,19 @@
 {% extends "network/layout.html" %}
 {% load static %}
 {% block body %}
-    {% if request.user.is_authenticated %}
-        <div id="post-form-div">
-            <form id="post-form">
-                {% csrf_token %}
-                <textarea id="post-form-msg" class="form-control m-1"></textarea>
-                <button class="btn btn-primary">Post</button>
-            </form>
-        </div>
+    <div id="post-form-div">
+    {% if request.user.is_authenticated %}        
+        <form id="post-form">
+            {% csrf_token %}
+            <textarea id="post-form-msg" class="form-control m-1"></textarea>
+            <button class="btn btn-primary">Post</button>
+        </form>
     {% endif %}
+    </div>
+    
+    <div id="profile-div">
+        <h3 id="profile-div-title"></h3>
+    </div>
 
     <div id="post-display-div">
     </div>
