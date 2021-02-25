@@ -1,5 +1,9 @@
+import { getCookie } from './helpers.js';
+import { generate_post, generate_profile } from './generators.js';
+
 let post_counter = 0;
-const posts_per_request = 100;
+const posts_per_request = 20;
+const csrftoken = getCookie('csrftoken');
 
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('#index-nav-link').addEventListener('click', () => {
@@ -14,28 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
   load_view('index');
 })
 
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-      const cookies = document.cookie.split(';');
-      for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          // Does this cookie string begin with the name we want?
-          if (cookie.substring(0, name.length + 1) === (name + '=')) {
-              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-              break;
-          }
-      }
-  }
-  return cookieValue;
-}
-
-const csrftoken = getCookie('csrftoken');
-
 function load_posts(user = null, feed = false) {
   const start = post_counter;
   const end = post_counter + posts_per_request;
-  counter = end + 1;
+  post_counter = end + 1;
 
   let url = `/posts?start=${start}&end=${end}`;
 
@@ -68,57 +54,37 @@ function load_view(view) {
   } else if (view === 'profile') {
     post_form_div.style.display = 'none';
     profile_div.style.display = 'block';
-    console.log(document.querySelector('#profile-div-title').innerHTML);
     load_posts(document.querySelector('#profile-div-title').innerHTML);
   }
 }
 
 
 function add_post_to_DOM(contents, position = 'end') {
-  const post = document.createElement('div');
-  
-  const timestamp = document.createElement('h6');
-  const body = document.createElement('div');
-  
-  post.className = 'post card-body';
+  post_counter++;
+  const post = generate_post(contents["fields"]);
 
-  // Card title
-  const title = document.createElement('h5');
-  title.className = 'card-title';
-  title.innerHTML = contents["fields"]["author"];
+  // add listener to title (loads profile on click)
+  const title = post.querySelector(".post-title");
   title.addEventListener('click', () => {
-    fetch(`user/${title.innerHTML}`)
-    .then(() => {
-      document.querySelector('#profile-div-title').innerHTML = contents["fields"]["author"];
+    fetch(`user/${contents["fields"]["author"]}`)
+    .then(response => response.json())
+    .then(data => {
+      document.querySelector('#profile-div').innerHTML = generate_profile(data);
       load_view('profile');
     })
   })
-  post.appendChild(title);
   
-  timestamp.className = 'card-subtitle mb-2 text-muted';
-  timestamp.innerHTML = contents["fields"]["timestamp"];
-  post.appendChild(timestamp);
-
-  body.className = 'card-text';
-  body.innerHTML = contents["fields"]["message"];
-  post.appendChild(body);
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'card';
-  wrapper.appendChild(post);
-
+  // append/prepend post to DOM
   if (position === 'end') {
     document.querySelector('#post-display-div').append(wrapper);
   } else {
     document.querySelector('#post-display-div').prepend(wrapper);
   }
-  counter++;
 }
-
 
 function submit_post(event) {
   event.preventDefault();
-
+  
   fetch('/submit_post', {
     method: 'POST',
     credentials: 'same-origin',
@@ -131,6 +97,7 @@ function submit_post(event) {
       'message': document.querySelector('#post-form-msg').value
     })
   })
+  // add post to DOM
   .then(response => response.json())
   .then(post => {
     add_post_to_DOM(post, 'front');

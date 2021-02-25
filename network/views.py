@@ -4,6 +4,7 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+import json
 
 from .models import User, Post
 
@@ -63,8 +64,15 @@ def register(request):
         return render(request, "network/register.html")
 
 def get_user_profile(request, username):
-    query = User.objects.get(username=username)
-    return HttpResponse(query)
+    user = User.objects.get(username=username)
+    response = {
+        'username' : user.username,
+        'post-count' : user.posts.count()
+    }
+    # Respond with user info in JSON
+    # serializer = serialize("json", [user], ensure_ascii=False, use_natural_foreign_keys=True)
+    # return HttpResponse(serializer[1:-1], content_type='application/json')
+    return HttpResponse(json.dumps(response), content_type='application/json')
 
 def get_posts(request):
     start = int(request.GET.get("start"))
