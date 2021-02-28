@@ -19,3 +19,21 @@ class Post(models.Model):
             message=self.message,
             timestamp=self.timestamp
         )
+
+RELATIONSHIP_FOLLOWING = 1
+RELATIONSHIP_BLOCKED = 2
+RELATIONSHIP_STATUSES = (
+    (RELATIONSHIP_FOLLOWING, 'Following'),
+    (RELATIONSHIP_BLOCKED, 'Blocked'),
+)
+
+class Relationship(models.Model):
+    from_user = models.ForeignKey(User,
+                                on_delete=models.CASCADE,
+                                related_name='relationships_from')
+                                
+    to_user = models.ForeignKey(User,
+                                on_delete=models.CASCADE,
+                                related_name='relationships_to')
+
+    status = models.IntegerField(choices=RELATIONSHIP_STATUSES)

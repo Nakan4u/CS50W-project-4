@@ -67,27 +67,33 @@ def get_user_profile(request, username):
     user = User.objects.get(username=username)
     response = {
         'username' : user.username,
-        'post-count' : user.posts.count()
+        'post-count' : user.posts.count(),
+        'following' : user.relationships_from.count(),
+        'followed-by' : user.relationships_to.count(),
     }
-    # Respond with user info in JSON
-    # serializer = serialize("json", [user], ensure_ascii=False, use_natural_foreign_keys=True)
-    # return HttpResponse(serializer[1:-1], content_type='application/json')
+
     return HttpResponse(json.dumps(response), content_type='application/json')
 
 def get_posts(request):
     start = int(request.GET.get("start"))
     end = int(request.GET.get("end"))
     user = request.GET.get("user") or None
+    feed = request.GET.get("feed") or None
 
-    if user:
+    if feed:
+        follow_relationships = request.user.relationships_from.filter(status=1)
+        following = User.objects.filter(id__in=follow_relationships.values('to_user'))
+        posts = Post.objects.filter(author__in=following)
+
+    elif user:
         user_obj = User.objects.get(username=user)
         posts = Post.objects.filter(author=user_obj)[start:end]
+
     else:
         posts = Post.objects.all()[start:end]
 
     serializer = serialize("json", posts, use_natural_foreign_keys=True)
     return HttpResponse(serializer, content_type='application/json')
-
 
 def submit_post(request):
     if request.method != "POST":

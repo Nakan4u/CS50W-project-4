@@ -6,9 +6,14 @@ const posts_per_request = 20;
 const csrftoken = getCookie('csrftoken');
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelector('#index-nav-link').addEventListener('click', () => {
-    load_view('index');
-  })
+
+  document.querySelector('#index-nav-link').addEventListener('click', () => load_view('index'));
+
+  const followingLink = document.querySelector('#following-nav-link');
+  if (followingLink) {
+    document.querySelector('#following-nav-link').addEventListener('click', () => load_view('feed'));
+  }
+  
 
   const postForm = document.querySelector('#post-form')
   if (postForm) {
@@ -29,6 +34,10 @@ function load_posts(user = null, feed = false) {
     url = url.concat(`&user=${user}`);
   }
 
+  if (feed) {
+    url = url.concat(`&feed=true`)
+  }
+
   fetch(url)
   .then(response => response.json())
   .then(data => {
@@ -45,7 +54,7 @@ function load_view(view) {
   profile_div.style.display = view === 'profile' ? 'block' : 'none';
 
   const post_form_div = document.querySelector('#post-form-div');
-  post_form_div.style.display = view === 'index' ? 'block' : 'none';
+  post_form_div.style.display = view === 'index' || view === 'feed' ? 'block' : 'none';
 
   if (view === 'index') {
     post_form_div.style.display = 'block';
@@ -55,7 +64,11 @@ function load_view(view) {
     post_form_div.style.display = 'none';
     profile_div.style.display = 'block';
     load_posts(document.querySelector('#profile-div-title').innerHTML);
-  }
+  } else if (view === 'feed') {
+    post_form_div.style.display = 'none';
+    profile_div.style.display = 'block';
+    load_posts(null, "feed");
+  } 
 }
 
 
@@ -76,9 +89,9 @@ function add_post_to_DOM(contents, position = 'end') {
   
   // append/prepend post to DOM
   if (position === 'end') {
-    document.querySelector('#post-display-div').append(wrapper);
+    document.querySelector('#post-display-div').append(post);
   } else {
-    document.querySelector('#post-display-div').prepend(wrapper);
+    document.querySelector('#post-display-div').prepend(post);
   }
 }
 

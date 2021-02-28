@@ -22,13 +22,11 @@
                     </li>
                 {% endif %}
                 <li class="nav-item">
-                    <span id="index-nav-link" class="nav-link">
-                        All Posts
-                    </span>
+                    <span id="index-nav-link" class="nav-link">All Posts</span>
                 </li>
                 {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Following</a>
+                        <span id="following-nav-link" class="nav-link">Following</span>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'logout' %}">Log Out</a>

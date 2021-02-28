@@ -17,6 +17,8 @@ export function generate_profile(contents) {
   return `
     <h3 id="profile-div-title">${contents['username']}</h3>
     <div>${contents['post-count']} Posts</div>
+    <div>Following ${contents['following']}</div>
+    <div>Followed by ${contents['followed-by']}</div>
   `;
 }
 
