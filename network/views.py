@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.urls import reverse
 import json
 
-from .models import User, Post
+from .models import User, Post, Relationship
 
 def index(request):
     return render(request, "network/index.html")
@@ -63,13 +63,44 @@ def register(request):
     else:
         return render(request, "network/register.html")
 
-def get_user_profile(request, username):
+def follow(request, username):
     user = User.objects.get(username=username)
+
+    follow_object = user.relationships_to.filter(from_user=request.user, status=1)
+
+    if follow_object:
+        follow_object.delete()
+        is_followed = False
+    else:
+        follow_object = Relationship(from_user=request.user, to_user=user, status=1)
+        follow_object.save()
+        is_followed = True
+
     response = {
         'username' : user.username,
         'post-count' : user.posts.count(),
         'following' : user.relationships_from.count(),
         'followed-by' : user.relationships_to.count(),
+        'is_followed' : is_followed,
+    }
+
+    return HttpResponse(json.dumps(response), content_type='application/json')
+    
+
+def get_user_profile(request, username):
+    user = User.objects.get(username=username)
+    
+    if user.relationships_to.filter(from_user=request.user, status=1):
+        is_followed = True
+    else:
+        is_followed = False
+
+    response = {
+        'username' : user.username,
+        'post-count' : user.posts.count(),
+        'following' : user.relationships_from.count(),
+        'followed-by' : user.relationships_to.count(),
+        'is_followed' : is_followed,
     }
 
     return HttpResponse(json.dumps(response), content_type='application/json')
@@ -81,9 +112,9 @@ def get_posts(request):
     feed = request.GET.get("feed") or None
 
     if feed:
-        follow_relationships = request.user.relationships_from.filter(status=1)
-        following = User.objects.filter(id__in=follow_relationships.values('to_user'))
-        posts = Post.objects.filter(author__in=following)
+        follow_relationships = request.user.relationships_from.filter(status=1) # Relationships 
+        following = User.objects.filter(id__in=follow_relationships.values('to_user')) # Users
+        posts = Post.objects.filter(author__in=following) # Posts
 
     elif user:
         user_obj = User.objects.get(username=user)

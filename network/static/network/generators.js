@@ -14,11 +14,20 @@ export function generate_post(contents) {
 }
 
 export function generate_profile(contents) {
-  return `
+  const profile = document.createElement('div');
+  profile.innerHTML = `
     <h3 id="profile-div-title">${contents['username']}</h3>
     <div>${contents['post-count']} Posts</div>
     <div>Following ${contents['following']}</div>
     <div>Followed by ${contents['followed-by']}</div>
   `;
+
+  const followButton = document.createElement('button');
+  followButton.innerHTML = contents['is_followed'] ? 'Unfollow' : 'Follow';
+  followButton.id = "follow-button";
+  followButton.className = "button btn-primary";
+  profile.appendChild(followButton);
+
+  return profile;
 }
 
