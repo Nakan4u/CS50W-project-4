@@ -1,13 +1,18 @@
 import { getCookie } from './helpers.js';
 import { generate_post, generate_profile } from './generators.js';
 
-let post_counter = 0;
-const posts_per_request = 20;
+let pageNumber = 1;
+const postsPerPage = 10;
+let currentView = 'index';
+
+
 const csrftoken = getCookie('csrftoken');
 
 document.addEventListener('DOMContentLoaded', () => {
 
   document.querySelector('#index-nav-link').addEventListener('click', () => load_view('index'));
+  document.querySelector('#btn-next-page').addEventListener('click', onClickNextPageButton);
+  document.querySelector('#btn-previous-page').addEventListener('click', onClickPreviousPageButton);
 
   const followingLink = document.querySelector('#following-nav-link');
 
@@ -19,25 +24,24 @@ document.addEventListener('DOMContentLoaded', () => {
   if (postForm) {
     postForm.addEventListener('submit', submit_post);
   }
-
   load_view('index');
 })
 
-function loadPosts(user = null, feed = false) {
-  const start = post_counter;
-  const end = post_counter + posts_per_request;
-  post_counter = end + 1;
+function loadPosts() {
 
-  let url = `/posts?start=${start}&end=${end}`;
+  // first, remove old posts from the DOM
+  document.querySelector('#post-display-div').innerHTML = "";
 
-  if (user) {
-    url = url.concat(`&user=${user}`);
+  // compose url for GET request, conditionals control optionally params
+  let url = `/posts?page=${pageNumber}&perPage=${postsPerPage}`;
+  if (currentView === 'profile') {
+    url = url.concat(`&user=${document.querySelector('#profile-div-title').innerHTML}`);
   }
-
-  if (feed) {
+  if (currentView === 'feed') {
     url = url.concat(`&feed=true`)
   }
 
+  // make GET request to '/posts' route & consume API
   fetch(url)
   .then(response => response.json())
   .then(data => {
@@ -46,8 +50,8 @@ function loadPosts(user = null, feed = false) {
 }
 
 function load_view(view) {
-  document.querySelector('#post-display-div').innerHTML = "";
-  post_counter = 0;
+  currentView = view;
+  pageNumber = 1;
 
   const profile_div = document.querySelector('#profile-div-container');
   profile_div.style.display = view === 'profile' ? 'block' : 'none';
@@ -55,26 +59,23 @@ function load_view(view) {
   const post_form_div = document.querySelector('#post-form-div');
   post_form_div.style.display = view === 'index' || view === 'feed' ? 'block' : 'none';
 
-  if (view === 'index') {
+  if (view === 'index' || view === 'feed') {
     post_form_div.style.display = 'block';
     profile_div.style.display = 'none';
-    loadPosts();
-  } else if (view === 'profile') {
+  } else {
     post_form_div.style.display = 'none';
+  }
+  
+  if (view === 'profile') {
     profile_div.style.display = 'block';
-
-    const username = document.querySelector('#profile-div-title').innerHTML;
-
-    loadPosts(username);
-  } else if (view ===  'feed') {
-    post_form_div.style.display = 'none';
+  } else {
     profile_div.style.display = 'none';
-    loadPosts(null, "feed");
-  } 
+  }
+
+  loadPosts();
 }
 
 function add_post_to_DOM(contents, position = 'end') {
-  post_counter++;
   const post = generate_post(contents["fields"]);
 
   // add listener to title (loads profile on click)
@@ -126,6 +127,7 @@ function submit_post(event) {
   })
 }
 
+
 function onClickPostTitle(contents) {
   // make a GET request to the user profile API route
   fetch(`user/${contents["fields"]["author"]}`)
@@ -145,4 +147,14 @@ function onClickFollowButton(contents) {
   .then(data => {
     add_profile_to_DOM(data);
   })
+}
+
+function onClickNextPageButton(contents) {
+  pageNumber++;
+  loadPosts();
+}
+
+function onClickPreviousPageButton(contents) {
+  pageNumber--;
+  loadPosts();
 }

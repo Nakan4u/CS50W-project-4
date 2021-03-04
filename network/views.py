@@ -1,4 +1,5 @@
 from django.core.serializers import serialize
+from django.core.paginator import Paginator
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
@@ -106,11 +107,32 @@ def get_user_profile(request, username):
     return HttpResponse(json.dumps(response), content_type='application/json')
 
 def get_posts(request):
-    start = int(request.GET.get("start"))
-    end = int(request.GET.get("end"))
+    pageNumber = int(request.GET.get("page"))
+    postsPerPage = int(request.GET.get("perPage"))
     user = request.GET.get("user") or None
     feed = request.GET.get("feed") or None
 
+    # Pagination
+
+    # if feed flag is raised, get posts of users request.user is following
+    if feed:
+        follow_relationships = request.user.relationships_from.filter(status=1) # Relationships 
+        following = User.objects.filter(id__in=follow_relationships.values('to_user')) # Users
+        posts = Post.objects.filter(author__in=following) # Posts       
+
+    # if user flag is raised, get posts by a specific user
+    elif user:
+        user_obj = User.objects.get(username=user)
+        posts = Post.objects.filter(author=user_obj)  
+
+    # else get all posts
+    else:
+        posts = Post.objects.all()
+    
+    paginator = Paginator(posts, postsPerPage)
+    page = paginator.get_page(pageNumber)
+
+    """
     if feed:
         follow_relationships = request.user.relationships_from.filter(status=1) # Relationships 
         following = User.objects.filter(id__in=follow_relationships.values('to_user')) # Users
@@ -122,8 +144,8 @@ def get_posts(request):
 
     else:
         posts = Post.objects.all()[start:end]
-
-    serializer = serialize("json", posts, use_natural_foreign_keys=True)
+    """
+    serializer = serialize("json", page, use_natural_foreign_keys=True)
     return HttpResponse(serializer, content_type='application/json')
 
 def submit_post(request):
