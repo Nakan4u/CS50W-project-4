@@ -10,24 +10,24 @@ const csrftoken = getCookie('csrftoken');
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  document.querySelector('#index-nav-link').addEventListener('click', () => load_view('index'));
+  document.querySelector('#index-nav-link').addEventListener('click', () => loadView('index'));
   document.querySelector('#btn-next-page').addEventListener('click', onClickNextPageButton);
   document.querySelector('#btn-previous-page').addEventListener('click', onClickPreviousPageButton);
 
   const followingLink = document.querySelector('#following-nav-link');
 
   if (followingLink) {
-    document.querySelector('#following-nav-link').addEventListener('click', () => load_view('feed'));
+    document.querySelector('#following-nav-link').addEventListener('click', () => loadView('feed'));
   }
   
   const postForm = document.querySelector('#post-form')
   if (postForm) {
     postForm.addEventListener('submit', submit_post);
   }
-  load_view('index');
+  loadView('index');
 })
 
-function loadPosts() {
+function loadPosts(currentView, pageNumber, postsPerPage) {
 
   // first, remove old posts from the DOM
   document.querySelector('#post-display-div').innerHTML = "";
@@ -45,34 +45,27 @@ function loadPosts() {
   fetch(url)
   .then(response => response.json())
   .then(data => {
-    data.forEach(post => add_post_to_DOM(post, 'end'));
+    const posts = JSON.parse(data['posts']);
+    posts.forEach(post => add_post_to_DOM(post, 'end'));
+    document.querySelector('#btn-next-page').style.display = data["has_next_page"] ?
+      "block" : "none";
+    document.querySelector('#btn-previous-page').style.display = data["has_previous_page"] ?
+      "block" : "none";
+    document.querySelector('#page-number').innerHTML = `Page ${data["page"]} of ${data["page_count"]}`;
   })
 }
 
-function load_view(view) {
+function loadView(view) {
   currentView = view;
   pageNumber = 1;
 
-  const profile_div = document.querySelector('#profile-div-container');
-  profile_div.style.display = view === 'profile' ? 'block' : 'none';
+  const profileDiv = document.querySelector('#profile-div-container');
+  profileDiv.style.display = (view === 'profile') ? 'block' : 'none';
 
-  const post_form_div = document.querySelector('#post-form-div');
-  post_form_div.style.display = view === 'index' || view === 'feed' ? 'block' : 'none';
+  const postFormDiv = document.querySelector('#post-form-div');
+  postFormDiv.style.display = (view === 'index') ? 'block' : 'none';
 
-  if (view === 'index' || view === 'feed') {
-    post_form_div.style.display = 'block';
-    profile_div.style.display = 'none';
-  } else {
-    post_form_div.style.display = 'none';
-  }
-  
-  if (view === 'profile') {
-    profile_div.style.display = 'block';
-  } else {
-    profile_div.style.display = 'none';
-  }
-
-  loadPosts();
+  loadPosts(currentView, pageNumber, postsPerPage);
 }
 
 function add_post_to_DOM(contents, position = 'end') {
@@ -124,9 +117,9 @@ function submit_post(event) {
   .then(response => response.json())
   .then(post => {
     add_post_to_DOM(post, 'front');
+    document.querySelector('#post-form-msg').value = "";
   })
 }
-
 
 function onClickPostTitle(contents) {
   // make a GET request to the user profile API route
@@ -134,7 +127,7 @@ function onClickPostTitle(contents) {
   .then(response => response.json())
   .then(data => {
     add_profile_to_DOM(data);
-    load_view('profile');
+    loadView('profile');
   })
 }
 
@@ -151,10 +144,10 @@ function onClickFollowButton(contents) {
 
 function onClickNextPageButton(contents) {
   pageNumber++;
-  loadPosts();
+  loadPosts(currentView, pageNumber, postsPerPage);
 }
 
 function onClickPreviousPageButton(contents) {
   pageNumber--;
-  loadPosts();
+  loadPosts(currentView, pageNumber, postsPerPage);
 }

@@ -112,8 +112,6 @@ def get_posts(request):
     user = request.GET.get("user") or None
     feed = request.GET.get("feed") or None
 
-    # Pagination
-
     # if feed flag is raised, get posts of users request.user is following
     if feed:
         follow_relationships = request.user.relationships_from.filter(status=1) # Relationships 
@@ -129,24 +127,20 @@ def get_posts(request):
     else:
         posts = Post.objects.all()
     
+    # handle pagination and serialize posts
     paginator = Paginator(posts, postsPerPage)
     page = paginator.get_page(pageNumber)
-
-    """
-    if feed:
-        follow_relationships = request.user.relationships_from.filter(status=1) # Relationships 
-        following = User.objects.filter(id__in=follow_relationships.values('to_user')) # Users
-        posts = Post.objects.filter(author__in=following) # Posts
-
-    elif user:
-        user_obj = User.objects.get(username=user)
-        posts = Post.objects.filter(author=user_obj)[start:end]
-
-    else:
-        posts = Post.objects.all()[start:end]
-    """
     serializer = serialize("json", page, use_natural_foreign_keys=True)
-    return HttpResponse(serializer, content_type='application/json')
+
+    response = {
+        "posts" : serializer,
+        "page" : pageNumber,
+        "page_count" : paginator.num_pages,
+        "has_next_page" : page.has_next(),
+        "has_previous_page" : page.has_previous(),
+    }
+
+    return HttpResponse(json.dumps(response), content_type='application/json')
 
 def submit_post(request):
     if request.method != "POST":

@@ -19,10 +19,20 @@
     </div>
     
     <div id="post-view">
-        <div id="post-display-div">
-        </div>
-        <button id="btn-previous-page" type="button">Previous Page</button>
-        <button id="btn-next-page" type="button">Next Page</button>
+        <div id="post-display-div"></div>
+        <ul class="pagination m-1">
+            <li class="page-link" id="btn-previous-page" >
+                <span aria-hidden="true">&laquo;</span>
+                <span class="sr-only">Previous</span>
+            </li>
+            <li class="page-item disabled">
+                <span id="page-number" class="page-link">Page 1 of 1</span>
+            </li>
+            <li class="page-link" id="btn-next-page">
+                <span aria-hidden="true">&raquo;</span>
+                <span class="sr-only">Next</span>
+            </li>
+       </ul>
     </div>
 {% endblock %}
 
