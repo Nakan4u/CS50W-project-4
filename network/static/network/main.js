@@ -1,5 +1,5 @@
 import { getCookie } from './helpers.js';
-import { generate_post, generate_profile } from './generators.js';
+import { generateEditButton, generate_post, generate_profile } from './generators.js';
 
 let pageNumber = 1;
 const postsPerPage = 10;
@@ -46,12 +46,8 @@ function loadPosts(currentView, pageNumber, postsPerPage) {
   .then(response => response.json())
   .then(data => {
     const posts = JSON.parse(data['posts']);
-    posts.forEach(post => add_post_to_DOM(post, 'end'));
-    document.querySelector('#btn-next-page').style.display = data["has_next_page"] ?
-      "block" : "none";
-    document.querySelector('#btn-previous-page').style.display = data["has_previous_page"] ?
-      "block" : "none";
-    document.querySelector('#page-number').innerHTML = `Page ${data["page"]} of ${data["page_count"]}`;
+    posts.forEach(post => add_post_to_DOM(post, data['requested_by'], 'end'));
+    updatePagination(data);
   })
 }
 
@@ -68,13 +64,23 @@ function loadView(view) {
   loadPosts(currentView, pageNumber, postsPerPage);
 }
 
-function add_post_to_DOM(contents, position = 'end') {
-  const post = generate_post(contents["fields"]);
+function add_post_to_DOM(contents, requestedBy, position = 'end') {
+  const post = generate_post(contents["pk"], contents["fields"]);
 
   // add listener to title (loads profile on click)
   const title = post.querySelector(".post-title");
   title.addEventListener('click', () => onClickPostTitle(contents));
   
+  // if post is authored by the user, generate an edit button
+  if (title.innerHTML === requestedBy) {
+
+    const editor = generateEditButton();
+    editor.addEventListener('click', () => {
+      onClickEditButton(post);
+    })
+    post.appendChild(editor);
+
+  }
   // append/prepend post to DOM
   if (position === 'end') {
     document.querySelector('#post-display-div').append(post);
@@ -131,6 +137,18 @@ function onClickPostTitle(contents) {
   })
 }
 
+function onClickEditButton(target) {
+  const post = target.querySelector('.card-text');
+
+  if (post.isContentEditable) {
+    post.contentEditable = "false";
+    target.querySelector('.edit-btn').innerHTML = "Edit";
+  } else {
+    post.contentEditable = "true";
+    target.querySelector('.edit-btn').innerHTML = "Save";
+  }
+}
+
 function onClickFollowButton(contents) {
   // make a GET request to the follow API route
   fetch(`user/${contents['username']}/follow`)
@@ -150,4 +168,12 @@ function onClickNextPageButton(contents) {
 function onClickPreviousPageButton(contents) {
   pageNumber--;
   loadPosts(currentView, pageNumber, postsPerPage);
+}
+
+function updatePagination(data) {
+  document.querySelector('#btn-next-page').style.display = data["has_next_page"] ?
+  "block" : "none";
+  document.querySelector('#btn-previous-page').style.display = data["has_previous_page"] ?
+  "block" : "none";
+  document.querySelector('#page-number').innerHTML = `Page ${data["page"]} of ${data["page_count"]}`;
 }

@@ -131,8 +131,8 @@ def get_posts(request):
     paginator = Paginator(posts, postsPerPage)
     page = paginator.get_page(pageNumber)
     serializer = serialize("json", page, use_natural_foreign_keys=True)
-
     response = {
+        "requested_by" : request.user.username,
         "posts" : serializer,
         "page" : pageNumber,
         "page_count" : paginator.num_pages,
