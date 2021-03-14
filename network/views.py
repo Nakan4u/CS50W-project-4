@@ -64,6 +64,19 @@ def register(request):
     else:
         return render(request, "network/register.html")
 
+def modify_post(request, id):
+    post = Post.objects.get(id=id)
+    
+    if request.user != post.author:
+        return HttpResponse('Only the posts author may edit it', status=403)
+
+    data = json.loads(request.body)
+    
+    post.message = data['message']
+    post.save()
+    return HttpResponse({'message' : data['message']})
+    
+
 def follow(request, username):
     user = User.objects.get(username=username)
 

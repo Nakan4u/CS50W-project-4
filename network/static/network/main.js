@@ -1,5 +1,5 @@
 import { getCookie } from './helpers.js';
-import { generateEditButton, generate_post, generate_profile } from './generators.js';
+import { generateEditButton, generatePost, generateProfile } from './generators.js';
 
 let pageNumber = 1;
 const postsPerPage = 10;
@@ -55,6 +55,7 @@ function loadView(view) {
   currentView = view;
   pageNumber = 1;
 
+  // only show profile on the profile view
   const profileDiv = document.querySelector('#profile-div-container');
   profileDiv.style.display = (view === 'profile') ? 'block' : 'none';
 
@@ -65,7 +66,7 @@ function loadView(view) {
 }
 
 function add_post_to_DOM(contents, requestedBy, position = 'end') {
-  const post = generate_post(contents["pk"], contents["fields"]);
+  const post = generatePost(contents["pk"], contents["fields"]);
 
   // add listener to title (loads profile on click)
   const title = post.querySelector(".post-title");
@@ -78,7 +79,7 @@ function add_post_to_DOM(contents, requestedBy, position = 'end') {
     editor.addEventListener('click', () => {
       onClickEditButton(post);
     })
-    post.appendChild(editor);
+    post.querySelector('.post-body').appendChild(editor);
 
   }
   // append/prepend post to DOM
@@ -91,7 +92,7 @@ function add_post_to_DOM(contents, requestedBy, position = 'end') {
 
 function add_profile_to_DOM(contents) {
 
-  const profile = generate_profile(contents);
+  const profile = generateProfile(contents);
   
   // add listener to follow button (follows/unfollows on click)
   const followButton = profile.querySelector("#follow-button")
@@ -139,15 +140,40 @@ function onClickPostTitle(contents) {
 
 function onClickEditButton(target) {
   const post = target.querySelector('.card-text');
+  const postID = target.id;
+  const textArea = target.querySelector('.card-text-editor');
+  const button = target.querySelector('.edit-btn');
 
-  if (post.isContentEditable) {
-    post.contentEditable = "false";
-    target.querySelector('.edit-btn').innerHTML = "Edit";
+  if (button.innerHTML === "Edit") {
+    button.innerHTML = "Save";
+    post.style.display = "none";
+    textArea.style.display = "block";
+    textArea.value = post.innerHTML;
   } else {
-    post.contentEditable = "true";
-    target.querySelector('.edit-btn').innerHTML = "Save";
+
+    fetch(`post/${postID}`, {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers:{
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken' : csrftoken,
+      },
+      body: JSON.stringify({
+        'message': textArea.value
+      })
+    })
+    .then(() => {
+      button.innerHTML = "Edit";
+      post.innerHTML = textArea.value;
+      textArea.value = "";
+      post.style.display = "block";
+      textArea.style.display = "none";
+    })
+
   }
 }
+  
 
 function onClickFollowButton(contents) {
   // make a GET request to the follow API route
