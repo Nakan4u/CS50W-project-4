@@ -1,5 +1,5 @@
 import { getCookie } from './helpers.js';
-import { generateEditButton, generatePost, generateProfile } from './generators.js';
+import { generateEditButton, generateLikeButton, generatePost, generateProfile } from './generators.js';
 
 let pageNumber = 1;
 const postsPerPage = 10;
@@ -71,7 +71,14 @@ function add_post_to_DOM(contents, requestedBy, position = 'end') {
   // add listener to title (loads profile on click)
   const title = post.querySelector(".post-title");
   title.addEventListener('click', () => onClickPostTitle(contents));
-  
+
+  // TODO
+  if (requestedBy) {
+    const likeButtonLabel = 'Like';
+    const likeButton = generateLikeButton(likeButtonLabel);   
+    post.querySelector('.post-body').appendChild(likeButton);
+  }
+
   // if post is authored by the user, generate an edit button
   if (title.innerHTML === requestedBy) {
 
@@ -80,8 +87,11 @@ function add_post_to_DOM(contents, requestedBy, position = 'end') {
       onClickEditButton(post);
     })
     post.querySelector('.post-body').appendChild(editor);
-
   }
+
+  
+
+
   // append/prepend post to DOM
   if (position === 'end') {
     document.querySelector('#post-display-div').append(post);

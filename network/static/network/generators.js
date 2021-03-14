@@ -7,7 +7,16 @@ export function generateEditButton() {
   return button;
 }
 
-export function generate_post(pk, contents) {
+export function generateLikeButton(label) {
+  const button = document.createElement('button');
+  button.type = "button";
+  button.className = "like-btn btn btn-primary float-left";
+  button.innerHTML = `<span></span> ${label}`;
+
+  return button;
+}
+
+export function generatePost(pk, contents) {
   const post = document.createElement('div');
   post.className = "post card";
   post.id = `${pk}`;
@@ -24,7 +33,7 @@ export function generate_post(pk, contents) {
   return post;
 }
 
-export function generate_profile(contents) {
+export function generateProfile(contents) {
   const profile = document.createElement('div');
   profile.innerHTML = `
     <h3 id="profile-div-title">${contents['username']}</h3>
