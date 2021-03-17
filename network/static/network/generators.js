@@ -11,7 +11,7 @@ export function generateLikeButton(label) {
   const button = document.createElement('button');
   button.type = "button";
   button.className = "like-btn btn btn-primary float-left";
-  button.innerHTML = `<span></span> ${label}`;
+  button.innerHTML = `${label}`;
 
   return button;
 }

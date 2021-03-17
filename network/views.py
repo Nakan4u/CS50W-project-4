@@ -7,7 +7,7 @@ from django.shortcuts import render
 from django.urls import reverse
 import json
 
-from .models import User, Post, Relationship
+from .models import User, Post, Relationship, Like
 
 def index(request):
     return render(request, "network/index.html")
@@ -68,12 +68,12 @@ def modify_post(request, id):
     post = Post.objects.get(id=id)
     
     if request.user != post.author:
-        return HttpResponse('Only the posts author may edit it', status=403)
+        return HttpResponse('You do not have permission to edit this post', status=403)
 
     data = json.loads(request.body)
-    
     post.message = data['message']
     post.save()
+    
     return HttpResponse({'message' : data['message']})
     
 
@@ -143,7 +143,7 @@ def get_posts(request):
     # handle pagination and serialize posts
     paginator = Paginator(posts, postsPerPage)
     page = paginator.get_page(pageNumber)
-    serializer = serialize("json", page, use_natural_foreign_keys=True)
+    serializer = serialize("json", page, ensure_ascii=False, use_natural_foreign_keys=True)
     response = {
         "requested_by" : request.user.username,
         "posts" : serializer,

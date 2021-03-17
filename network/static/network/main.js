@@ -72,8 +72,9 @@ function add_post_to_DOM(contents, requestedBy, position = 'end') {
   const title = post.querySelector(".post-title");
   title.addEventListener('click', () => onClickPostTitle(contents));
 
-  // TODO
+  // add a like btn if the user is signed in
   if (requestedBy) {
+    console.log(contents.fields)
     const likeButtonLabel = 'Like';
     const likeButton = generateLikeButton(likeButtonLabel);   
     post.querySelector('.post-body').appendChild(likeButton);
