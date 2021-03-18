@@ -8,6 +8,7 @@ class Post(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
     message = models.TextField(max_length=140)
     timestamp = models.DateTimeField(auto_now_add=True)
+    liked_by = models.ManyToManyField(User, related_name="likes")
 
     class Meta:
         ordering = ['-timestamp']
@@ -25,16 +26,6 @@ RELATIONSHIP_STATUSES = (
     (RELATIONSHIP_FOLLOWING, 'Following'),
     (RELATIONSHIP_BLOCKED, 'Blocked'),
 )
-
-class Like(models.Model):
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="likes")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="likes")
-
-    def __str__(self):
-        return '{user} likes: {post}'.format(
-            user=self.user.username,
-            post=self.post.message,
-        )
 
 class Relationship(models.Model):
     from_user = models.ForeignKey(User,

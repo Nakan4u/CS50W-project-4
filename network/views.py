@@ -7,7 +7,7 @@ from django.shortcuts import render
 from django.urls import reverse
 import json
 
-from .models import User, Post, Relationship, Like
+from .models import User, Post, Relationship
 
 def index(request):
     return render(request, "network/index.html")
@@ -140,10 +140,13 @@ def get_posts(request):
     else:
         posts = Post.objects.all()
     
+
     # handle pagination and serialize posts
     paginator = Paginator(posts, postsPerPage)
     page = paginator.get_page(pageNumber)
-    serializer = serialize("json", page, ensure_ascii=False, use_natural_foreign_keys=True)
+
+    serializer = serialize("json", page, use_natural_foreign_keys=True)
+
     response = {
         "requested_by" : request.user.username,
         "posts" : serializer,
@@ -154,6 +157,19 @@ def get_posts(request):
     }
 
     return HttpResponse(json.dumps(response), content_type='application/json')
+
+def like_post(request, id):
+    post = Post.objects.get(id=id)
+    state = json.loads(request.body)['state']
+    if state == 'Like':
+        post.liked_by.add(request.user)
+        state = 'Unlike'
+    elif state == 'Unlike':
+        post.liked_by.remove(request.user)
+        state = 'Like'
+    post.save()
+    
+    return HttpResponse(json.dumps({'state': state}), content_type='application/json')
 
 def submit_post(request):
     if request.method != "POST":

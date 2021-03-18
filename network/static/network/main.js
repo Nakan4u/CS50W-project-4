@@ -74,24 +74,27 @@ function add_post_to_DOM(contents, requestedBy, position = 'end') {
 
   // add a like btn if the user is signed in
   if (requestedBy) {
-    console.log(contents.fields)
-    const likeButtonLabel = 'Like';
+    const likers = contents["fields"]["liked_by"];
+    let likeButtonLabel = 'Like';
+    likers.forEach(liker => {
+      if (liker[0] === requestedBy) likeButtonLabel = 'Unlike';
+    })
     const likeButton = generateLikeButton(likeButtonLabel);   
     post.querySelector('.post-body').appendChild(likeButton);
+
+    likeButton.addEventListener('click', () => {
+      onClickLikeButton(post);
+    })
   }
 
   // if post is authored by the user, generate an edit button
   if (title.innerHTML === requestedBy) {
-
     const editor = generateEditButton();
     editor.addEventListener('click', () => {
       onClickEditButton(post);
     })
     post.querySelector('.post-body').appendChild(editor);
   }
-
-  
-
 
   // append/prepend post to DOM
   if (position === 'end') {
@@ -100,6 +103,7 @@ function add_post_to_DOM(contents, requestedBy, position = 'end') {
     document.querySelector('#post-display-div').prepend(post);
   }
 }
+
 
 function add_profile_to_DOM(contents) {
 
@@ -130,11 +134,10 @@ function submit_post(event) {
       'message': document.querySelector('#post-form-msg').value
     })
   })
-
   // API response contains the new post - add it to the DOM
   .then(response => response.json())
   .then(post => {
-    add_post_to_DOM(post, 'front');
+    add_post_to_DOM(post, post["fields"]["author"][0], 'front');
     document.querySelector('#post-form-msg').value = "";
   })
 }
@@ -195,6 +198,25 @@ function onClickFollowButton(contents) {
   .then(data => {
     add_profile_to_DOM(data);
   })
+}
+
+function onClickLikeButton(post) {
+  const likeButton = post.querySelector('.like-btn');
+  
+  fetch(`post/${post.id}/like`, {
+    method: 'PUT',
+    credentials: 'same-origin',
+    headers:{
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRFToken' : csrftoken,
+    },
+    body: JSON.stringify({
+      'state' : likeButton.innerHTML
+    })
+  })
+  .then(response => response.json())
+  .then(data => likeButton.innerHTML = data['state'])
 }
 
 function onClickNextPageButton(contents) {
