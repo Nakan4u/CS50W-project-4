@@ -1,7 +1,7 @@
 export function generateEditButton() {
   const button = document.createElement('button');
   button.type = "button";
-  button.className = "edit-btn btn btn-secondary float-right";
+  button.className = "edit-btn btn btn-secondary";
   button.innerHTML = "Edit";
 
   return button;

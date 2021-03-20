@@ -82,7 +82,7 @@ function add_post_to_DOM(contents, requestedBy, position = 'end') {
     const likeButton = generateLikeButton(likeButtonState, likers.length);   
     post.querySelector('.post-body').appendChild(likeButton);
 
-    likeButton.addEventListener('click', () => {
+    likeButton.firstChild.addEventListener('click', () => {
       onClickLikeButton(post);
     })
   }
@@ -100,6 +100,8 @@ function add_post_to_DOM(contents, requestedBy, position = 'end') {
   if (position === 'end') {
     document.querySelector('#post-display-div').append(post);
   } else {
+    post.style.animationName = 'fade-in';
+    post.style.animationDuration = '1s';
     document.querySelector('#post-display-div').prepend(post);
   }
 }
