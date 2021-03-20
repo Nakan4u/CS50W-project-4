@@ -2,7 +2,7 @@ from django.core.serializers import serialize
 from django.core.paginator import Paginator
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 import json
@@ -161,15 +161,15 @@ def get_posts(request):
 def like_post(request, id):
     post = Post.objects.get(id=id)
     state = json.loads(request.body)['state']
-    if state == 'Like':
+    if state == 'like':
         post.liked_by.add(request.user)
-        state = 'Unlike'
-    elif state == 'Unlike':
+        state = 'unlike'
+    elif state == 'unlike':
         post.liked_by.remove(request.user)
-        state = 'Like'
+        state = 'like'
     post.save()
     
-    return HttpResponse(json.dumps({'state': state}), content_type='application/json')
+    return HttpResponse(json.dumps({'state': state, 'likes' : post.liked_by.count() }), content_type='application/json')
 
 def submit_post(request):
     if request.method != "POST":

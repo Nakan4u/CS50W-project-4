@@ -1,0 +1,32 @@
+.like-btn, .unlike-btn {
+  border-color: #007bff;
+  border-radius: 4px;
+  border-width: 1px;
+  padding: 10px;
+}
+
+.like-btn {
+  background-color: #ffffff;
+}
+
+.unlike-btn {
+  background-color: #007bff;
+}
+
+.like-btn:hover, .unlike-btn:hover {
+  background-color: #0069d9;
+  border-color: #0069d9;
+}
+
+.counter-txt {
+  margin-left: 10px;
+}
+
+.like-btn > .counter-txt {
+  color: black;
+  
+}
+
+.unlike-btn > .counter-txt {
+  color: white;
+}

@@ -7,13 +7,19 @@ export function generateEditButton() {
   return button;
 }
 
-export function generateLikeButton(label) {
+export function generateLikeButton(label, count) {
   const button = document.createElement('button');
   button.type = "button";
-  button.className = "like-btn btn btn-primary float-left";
-  button.innerHTML = `${label}`;
+  button.className = `${label}-btn`;
+  button.innerHTML = `&#10084`;
+  const likeCounter = document.createElement('span');
+  likeCounter.className = `counter-txt`
+  likeCounter.innerHTML = `${count}`
 
-  return button;
+  const likeDiv = document.createElement('div');
+  likeDiv.appendChild(button);
+  button.appendChild(likeCounter);
+  return likeDiv;
 }
 
 export function generatePost(pk, contents) {

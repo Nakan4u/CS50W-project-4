@@ -1,4 +1,4 @@
-import { getCookie } from './helpers.js';
+import { getCookie } from './utils.js';
 import { generateEditButton, generateLikeButton, generatePost, generateProfile } from './generators.js';
 
 let pageNumber = 1;
@@ -75,11 +75,11 @@ function add_post_to_DOM(contents, requestedBy, position = 'end') {
   // add a like btn if the user is signed in
   if (requestedBy) {
     const likers = contents["fields"]["liked_by"];
-    let likeButtonLabel = 'Like';
+    let likeButtonState = 'like';
     likers.forEach(liker => {
-      if (liker[0] === requestedBy) likeButtonLabel = 'Unlike';
+      if (liker[0] === requestedBy) likeButtonState = 'unlike';
     })
-    const likeButton = generateLikeButton(likeButtonLabel);   
+    const likeButton = generateLikeButton(likeButtonState, likers.length);   
     post.querySelector('.post-body').appendChild(likeButton);
 
     likeButton.addEventListener('click', () => {
@@ -201,8 +201,9 @@ function onClickFollowButton(contents) {
 }
 
 function onClickLikeButton(post) {
-  const likeButton = post.querySelector('.like-btn');
-  
+
+  const likeBtnState = post.querySelector('.like-btn') ? 'like' : 'unlike';
+
   fetch(`post/${post.id}/like`, {
     method: 'PUT',
     credentials: 'same-origin',
@@ -212,11 +213,14 @@ function onClickLikeButton(post) {
       'X-CSRFToken' : csrftoken,
     },
     body: JSON.stringify({
-      'state' : likeButton.innerHTML
+      'state' : likeBtnState
     })
   })
   .then(response => response.json())
-  .then(data => likeButton.innerHTML = data['state'])
+  .then(data => {
+    post.querySelector(`.${likeBtnState}-btn`).className = `${data['state']}-btn`;
+    post.querySelector('.counter-txt').innerHTML = data['likes'];
+  })
 }
 
 function onClickNextPageButton(contents) {
