@@ -3,7 +3,6 @@ export function generateEditButton() {
   button.type = "button";
   button.className = "edit-btn btn btn-secondary";
   button.innerHTML = "Edit";
-
   return button;
 }
 
@@ -12,6 +11,7 @@ export function generateLikeButton(label, count) {
   button.type = "button";
   button.className = `${label}-btn`;
   button.innerHTML = `&#10084`;
+
   const likeCounter = document.createElement('span');
   likeCounter.className = `counter-txt`
   likeCounter.innerHTML = `${count}`
@@ -22,30 +22,46 @@ export function generateLikeButton(label, count) {
   return likeDiv;
 }
 
-export function generatePost(pk, contents) {
+export function generatePost(context) {
   const post = document.createElement('div');
   post.className = "post card";
-  post.id = `${pk}`;
+  post.id = `${context.pk}`;
   post.innerHTML = `
     <div class="post-body card-body">
-      <h5 class="post-title card-title">${contents['author']}</h5>
-      <h6 class="card-subtitle mb-2 text-muted">${contents['timestamp']}</h6>
-      <p class="card-text">${contents['message']}</p>
+      <h5 class="post-title card-title">${context.fields.author}</h5>
+      <h6 class="card-subtitle mb-2 text-muted">${context.fields.timestamp}</h6>
+      <p class="card-text">${context.fields.message}</p>
       <textarea class="card-text-editor form-control" style="display:none"></textarea>
     </div>
   `
-
-  
   return post;
 }
 
 export function generateProfile(contents) {
   const profile = document.createElement('div');
   profile.innerHTML = `
-    <h3 id="profile-div-title">${contents['username']}</h3>
-    <div>${contents['post-count']} Posts</div>
-    <div>Following ${contents['following']}</div>
-    <div>Followed by ${contents['followed-by']}</div>
+    <h1 id="profile-div-title">${contents.username}</h1>
+    <span class="text-muted">Joined ${contents.join_date}</span>
+    <ul id="profile-stats-list">
+      <li>
+        <div>
+          <h6>Posts</h6> ${contents.post_count}
+        </div>
+      </li>
+      <li>
+        <div>
+          <h6>Following</h6>
+          ${contents.following}
+        </div>
+      </li>
+      <li>
+        <div>
+          <h6>Followers</h6> 
+          ${contents.followed_by}
+        </div>
+      </li>
+    </ul>
+    
   `;
 
   const followButton = document.createElement('button');

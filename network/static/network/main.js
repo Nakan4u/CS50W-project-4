@@ -1,4 +1,4 @@
-import { getCookie } from './utils.js';
+import { fetchHeaders, getCookie } from './utils.js';
 import { generateEditButton, generateLikeButton, generatePost, generateProfile } from './generators.js';
 
 let pageNumber = 1;
@@ -29,14 +29,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function loadPosts(currentView, pageNumber, postsPerPage) {
 
-  // first, remove old posts from the DOM
+  // remove old posts from the DOM
   document.querySelector('#post-display-div').innerHTML = "";
 
-  // compose url for GET request, conditionals control optionally params
+  // compose url for GET request
   let url = `/posts?page=${pageNumber}&perPage=${postsPerPage}`;
+
   if (currentView === 'profile') {
     url = url.concat(`&user=${document.querySelector('#profile-div-title').innerHTML}`);
   }
+
   if (currentView === 'feed') {
     url = url.concat(`&feed=true`)
   }
@@ -46,7 +48,10 @@ function loadPosts(currentView, pageNumber, postsPerPage) {
   .then(response => response.json())
   .then(data => {
     const posts = JSON.parse(data['posts']);
-    posts.forEach(post => add_post_to_DOM(post, data['requested_by'], 'end'));
+    posts.forEach(post => addPostToDOM(
+        {'post' : post, 'user' : data['requested_by'], 'position' : 'end'}
+      )
+    );
     updatePagination(data);
   })
 }
@@ -65,19 +70,18 @@ function loadView(view) {
   loadPosts(currentView, pageNumber, postsPerPage);
 }
 
-function add_post_to_DOM(contents, requestedBy, position = 'end') {
-  const post = generatePost(contents["pk"], contents["fields"]);
-
+function addPostToDOM(context) {
+  const post = generatePost(context["post"]);
   // add listener to title (loads profile on click)
   const title = post.querySelector(".post-title");
-  title.addEventListener('click', () => onClickPostTitle(contents));
+  title.addEventListener('click', () => onClickPostTitle(context["post"]));
 
   // add a like btn if the user is signed in
-  if (requestedBy) {
-    const likers = contents["fields"]["liked_by"];
+  if (context['user']) {
+    const likers = context["post"]["fields"]["liked_by"];
     let likeButtonState = 'like';
     likers.forEach(liker => {
-      if (liker[0] === requestedBy) likeButtonState = 'unlike';
+      if (liker[0] === context["user"]) likeButtonState = 'unlike';
     })
     const likeButton = generateLikeButton(likeButtonState, likers.length);   
     post.querySelector('.post-body').appendChild(likeButton);
@@ -88,7 +92,7 @@ function add_post_to_DOM(contents, requestedBy, position = 'end') {
   }
 
   // if post is authored by the user, generate an edit button
-  if (title.innerHTML === requestedBy) {
+  if (title.innerHTML === context["user"]) {
     const editor = generateEditButton();
     editor.addEventListener('click', () => {
       onClickEditButton(post);
@@ -97,7 +101,7 @@ function add_post_to_DOM(contents, requestedBy, position = 'end') {
   }
 
   // append/prepend post to DOM
-  if (position === 'end') {
+  if (context['position'] === 'end') {
     document.querySelector('#post-display-div').append(post);
   } else {
     post.style.animationName = 'fade-in';
@@ -105,7 +109,6 @@ function add_post_to_DOM(contents, requestedBy, position = 'end') {
     document.querySelector('#post-display-div').prepend(post);
   }
 }
-
 
 function add_profile_to_DOM(contents) {
 
@@ -127,19 +130,14 @@ function submit_post(event) {
   fetch('/submit_post', {
     method: 'POST',
     credentials: 'same-origin',
-    headers:{
-      'Accept': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-      'X-CSRFToken' : csrftoken,
-    },
+    headers: fetchHeaders(csrftoken),
     body: JSON.stringify({
       'message': document.querySelector('#post-form-msg').value
     })
   })
-  // API response contains the new post - add it to the DOM
   .then(response => response.json())
   .then(post => {
-    add_post_to_DOM(post, post["fields"]["author"][0], 'front');
+    addPostToDOM({'post' : post, 'user' : post["fields"]["author"][0], 'position' : 'front'})
     document.querySelector('#post-form-msg').value = "";
   })
 }
@@ -170,11 +168,7 @@ function onClickEditButton(target) {
     fetch(`post/${postID}`, {
       method: 'PUT',
       credentials: 'same-origin',
-      headers:{
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        'X-CSRFToken' : csrftoken,
-      },
+      headers: fetchHeaders(csrftoken),
       body: JSON.stringify({
         'message': textArea.value
       })
@@ -236,9 +230,13 @@ function onClickPreviousPageButton(contents) {
 }
 
 function updatePagination(data) {
-  document.querySelector('#btn-next-page').style.display = data["has_next_page"] ?
-  "block" : "none";
-  document.querySelector('#btn-previous-page').style.display = data["has_previous_page"] ?
-  "block" : "none";
-  document.querySelector('#page-number').innerHTML = `Page ${data["page"]} of ${data["page_count"]}`;
+  document.querySelector('#btn-next-page').style.display = 
+    data["has_next_page"] ? "block" : "none";
+
+  document.querySelector('#btn-previous-page').style.display =
+    data["has_previous_page"] ? "block" : "none";
+
+  document.querySelector('#page-number').innerHTML = `
+    Page ${data["page"]} of ${data["page_count"]}
+  `;
 }

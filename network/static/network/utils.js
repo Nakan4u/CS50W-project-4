@@ -13,3 +13,11 @@ export function getCookie(name) {
   }
   return cookieValue;
 }
+
+export function fetchHeaders(csrftoken) {
+	return {
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRFToken' : csrftoken,
+	};
+}

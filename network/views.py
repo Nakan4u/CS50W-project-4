@@ -6,6 +6,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 import json
+import datetime
 
 from .models import User, Post, Relationship
 
@@ -92,10 +93,11 @@ def follow(request, username):
 
     response = {
         'username' : user.username,
-        'post-count' : user.posts.count(),
+        'post_count' : user.posts.count(),
         'following' : user.relationships_from.count(),
-        'followed-by' : user.relationships_to.count(),
+        'followed_by' : user.relationships_to.count(),
         'is_followed' : is_followed,
+        'join_date' : f'{user.date_joined.strftime("%B")} {user.date_joined.strftime("%Y")}',
     }
 
     return HttpResponse(json.dumps(response), content_type='application/json')
@@ -111,10 +113,11 @@ def get_user_profile(request, username):
 
     response = {
         'username' : user.username,
-        'post-count' : user.posts.count(),
+        'post_count' : user.posts.count(),
         'following' : user.relationships_from.count(),
-        'followed-by' : user.relationships_to.count(),
+        'followed_by' : user.relationships_to.count(),
         'is_followed' : is_followed,
+        'join_date' : f'{user.date_joined.strftime("%B")} {user.date_joined.strftime("%Y")}',
     }
 
     return HttpResponse(json.dumps(response), content_type='application/json')
@@ -169,7 +172,7 @@ def like_post(request, id):
         state = 'like'
     post.save()
     
-    return HttpResponse(json.dumps({'state': state, 'likes' : post.liked_by.count() }), content_type='application/json')
+    return HttpResponse(json.dumps({'state': state, 'likes' : post.liked_by.count()}), content_type='application/json')
 
 def submit_post(request):
     if request.method != "POST":
