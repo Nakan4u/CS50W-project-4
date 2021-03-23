@@ -47,11 +47,10 @@ function loadPosts(currentView, pageNumber, postsPerPage) {
   fetch(url)
   .then(response => response.json())
   .then(data => {
-    const posts = JSON.parse(data['posts']);
-    posts.forEach(post => addPostToDOM(
-        {'post' : post, 'user' : data['requested_by'], 'position' : 'end'}
-      )
-    );
+    data.posts.forEach(post => addPostToDOM({
+      'post' : post, 'user' : data['requested_by'], 'position' : 'end'
+    }));
+
     updatePagination(data);
   })
 }
@@ -71,17 +70,18 @@ function loadView(view) {
 }
 
 function addPostToDOM(context) {
-  const post = generatePost(context["post"]);
+  const post = generatePost(context);
+
   // add listener to title (loads profile on click)
   const title = post.querySelector(".post-title");
-  title.addEventListener('click', () => onClickPostTitle(context["post"]));
+  title.addEventListener('click', () => onClickPostTitle(context.post));
 
   // add a like btn if the user is signed in
-  if (context['user']) {
-    const likers = context["post"]["fields"]["liked_by"];
+  if (context.user) {
+    const likers = context.post.liked_by;
     let likeButtonState = 'like';
     likers.forEach(liker => {
-      if (liker[0] === context["user"]) likeButtonState = 'unlike';
+      if (liker === context.user) likeButtonState = 'unlike';
     })
     const likeButton = generateLikeButton(likeButtonState, likers.length);   
     post.querySelector('.post-body').appendChild(likeButton);
@@ -92,7 +92,7 @@ function addPostToDOM(context) {
   }
 
   // if post is authored by the user, generate an edit button
-  if (title.innerHTML === context["user"]) {
+  if (title.innerHTML === context.user) {
     const editor = generateEditButton();
     editor.addEventListener('click', () => {
       onClickEditButton(post);
@@ -101,7 +101,7 @@ function addPostToDOM(context) {
   }
 
   // append/prepend post to DOM
-  if (context['position'] === 'end') {
+  if (context.position === 'end') {
     document.querySelector('#post-display-div').append(post);
   } else {
     post.style.animationName = 'fade-in';
@@ -137,14 +137,14 @@ function submit_post(event) {
   })
   .then(response => response.json())
   .then(post => {
-    addPostToDOM({'post' : post, 'user' : post["fields"]["author"][0], 'position' : 'front'})
+    addPostToDOM({'post' : post, 'user' : post.author, 'position' : 'front'})
     document.querySelector('#post-form-msg').value = "";
   })
 }
 
-function onClickPostTitle(contents) {
+function onClickPostTitle(post) {
   // make a GET request to the user profile API route
-  fetch(`user/${contents["fields"]["author"]}`)
+  fetch(`user/${post.author}`)
   .then(response => response.json())
   .then(data => {
     add_profile_to_DOM(data);
@@ -164,7 +164,6 @@ function onClickEditButton(target) {
     textArea.style.display = "block";
     textArea.value = post.innerHTML;
   } else {
-
     fetch(`post/${postID}`, {
       method: 'PUT',
       credentials: 'same-origin',

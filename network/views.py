@@ -8,7 +8,10 @@ from django.urls import reverse
 import json
 import datetime
 
+from rest_framework.renderers import JSONRenderer
+
 from .models import User, Post, Relationship
+from .serializers import PostSerializer
 
 def index(request):
     return render(request, "network/index.html")
@@ -106,13 +109,15 @@ def follow(request, username):
 def get_user_profile(request, username):
     user = User.objects.get(username=username)
     
-    if user.relationships_to.filter(from_user=request.user, status=1):
+    if not user.is_authenticated:
+        is_followed = False
+    elif user.relationships_to.filter(from_user=request.user, status=1):
         is_followed = True
     else:
         is_followed = False
 
     response = {
-        'username' : user.username,
+        'username' : user.username or None,
         'post_count' : user.posts.count(),
         'following' : user.relationships_from.count(),
         'followed_by' : user.relationships_to.count(),
@@ -148,15 +153,16 @@ def get_posts(request):
     paginator = Paginator(posts, postsPerPage)
     page = paginator.get_page(pageNumber)
 
-    serializer = serialize("json", page, use_natural_foreign_keys=True)
+    # serializer = serialize("json", page, use_natural_foreign_keys=True)
+    serializer = PostSerializer(posts, many=True)
 
     response = {
         "requested_by" : request.user.username,
-        "posts" : serializer,
         "page" : pageNumber,
         "page_count" : paginator.num_pages,
         "has_next_page" : page.has_next(),
         "has_previous_page" : page.has_previous(),
+        "posts" : serializer.data,
     }
 
     return HttpResponse(json.dumps(response), content_type='application/json')
@@ -182,7 +188,7 @@ def submit_post(request):
     data = json.loads(request.body)
     post = Post(author=request.user, message=data['message'])
     post.save()
+    serializer = PostSerializer(post)
 
     # Respond with the new post in JSON
-    response = serialize("json", [post], ensure_ascii=False, use_natural_foreign_keys=True)
-    return HttpResponse(response[1:-1], content_type='application/json')
+    return HttpResponse(json.dumps(serializer.data), content_type='application/json')

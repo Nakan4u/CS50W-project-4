@@ -25,15 +25,16 @@ export function generateLikeButton(label, count) {
 export function generatePost(context) {
   const post = document.createElement('div');
   post.className = "post card";
-  post.id = `${context.pk}`;
+  post.id = `${context.post.id}`;
   post.innerHTML = `
     <div class="post-body card-body">
-      <h5 class="post-title card-title">${context.fields.author}</h5>
-      <h6 class="card-subtitle mb-2 text-muted">${context.fields.timestamp}</h6>
-      <p class="card-text">${context.fields.message}</p>
+      <h5 class="post-title card-title">${context.post.author}</h5>
+      <h6 class="card-subtitle mb-2 text-muted">${context.post.timestamp}</h6>
+      <p class="card-text">${context.post.message}</p>
       <textarea class="card-text-editor form-control" style="display:none"></textarea>
     </div>
   `
+
   return post;
 }
 
