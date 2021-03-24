@@ -2,11 +2,10 @@ from django.core.serializers import serialize
 from django.core.paginator import Paginator
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 import json
-import datetime
 
 from rest_framework.renderers import JSONRenderer
 
@@ -78,14 +77,18 @@ def modify_post(request, id):
     post.message = data['message']
     post.save()
     
-    return HttpResponse({'message' : data['message']})
-    
+    return JsonResponse({'message' : data['message']}, status=200)    
 
 def follow(request, username):
     user = User.objects.get(username=username)
 
+    if request.user == user:
+        return HttpResponse('You cannot follow yourself', status=403)
+
+    # query DB to check whether current user is already following
     follow_object = user.relationships_to.filter(from_user=request.user, status=1)
 
+    # create or delete follow object, depending on DB query
     if follow_object:
         follow_object.delete()
         is_followed = False
@@ -94,6 +97,7 @@ def follow(request, username):
         follow_object.save()
         is_followed = True
 
+    # respond with data to rebuilt profile on FE
     response = {
         'username' : user.username,
         'post_count' : user.posts.count(),
@@ -101,15 +105,14 @@ def follow(request, username):
         'followed_by' : user.relationships_to.count(),
         'is_followed' : is_followed,
         'join_date' : f'{user.date_joined.strftime("%B")} {user.date_joined.strftime("%Y")}',
+        'requested_by' : request.user.username if request.user.is_authenticated else None,
     }
-
-    return HttpResponse(json.dumps(response), content_type='application/json')
-    
+    return JsonResponse(response, status=200)    
 
 def get_user_profile(request, username):
     user = User.objects.get(username=username)
     
-    if not user.is_authenticated:
+    if not request.user.is_authenticated:
         is_followed = False
     elif user.relationships_to.filter(from_user=request.user, status=1):
         is_followed = True
@@ -117,15 +120,15 @@ def get_user_profile(request, username):
         is_followed = False
 
     response = {
-        'username' : user.username or None,
+        'username' : user.username,
         'post_count' : user.posts.count(),
         'following' : user.relationships_from.count(),
         'followed_by' : user.relationships_to.count(),
-        'is_followed' : is_followed,
+        'is_followed' : is_followed or None,
         'join_date' : f'{user.date_joined.strftime("%B")} {user.date_joined.strftime("%Y")}',
+        'requested_by' : request.user.username if request.user.is_authenticated else None,
     }
-
-    return HttpResponse(json.dumps(response), content_type='application/json')
+    return JsonResponse(response, status=200)
 
 def get_posts(request):
     pageNumber = int(request.GET.get("page"))
@@ -152,9 +155,7 @@ def get_posts(request):
     # handle pagination and serialize posts
     paginator = Paginator(posts, postsPerPage)
     page = paginator.get_page(pageNumber)
-
-    # serializer = serialize("json", page, use_natural_foreign_keys=True)
-    serializer = PostSerializer(posts, many=True)
+    serializer = PostSerializer(page, many=True)
 
     response = {
         "requested_by" : request.user.username,
@@ -164,21 +165,25 @@ def get_posts(request):
         "has_previous_page" : page.has_previous(),
         "posts" : serializer.data,
     }
-
-    return HttpResponse(json.dumps(response), content_type='application/json')
+    return JsonResponse(response, status=200)
 
 def like_post(request, id):
     post = Post.objects.get(id=id)
     state = json.loads(request.body)['state']
+
+    # check if this is a like or an unlike & update DB 
     if state == 'like':
         post.liked_by.add(request.user)
-        state = 'unlike'
     elif state == 'unlike':
         post.liked_by.remove(request.user)
-        state = 'like'
     post.save()
     
-    return HttpResponse(json.dumps({'state': state, 'likes' : post.liked_by.count()}), content_type='application/json')
+    # return JSON string of new likes count and toggled state
+    response = {
+        'state': "unlike" if state == "like" else "like",
+        'likes' : post.liked_by.count(),
+    }
+    return JsonResponse(response, status=200)
 
 def submit_post(request):
     if request.method != "POST":
@@ -191,4 +196,4 @@ def submit_post(request):
     serializer = PostSerializer(post)
 
     # Respond with the new post in JSON
-    return HttpResponse(json.dumps(serializer.data), content_type='application/json')
+    return JsonResponse(serializer.data, status=200)

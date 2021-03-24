@@ -48,9 +48,10 @@ function loadPosts(currentView, pageNumber, postsPerPage) {
   .then(response => response.json())
   .then(data => {
     data.posts.forEach(post => addPostToDOM({
-      'post' : post, 'user' : data['requested_by'], 'position' : 'end'
+      'post' : post,
+      'user' : data['requested_by'],
+      'position' : 'end'
     }));
-
     updatePagination(data);
   })
 }
@@ -63,6 +64,7 @@ function loadView(view) {
   const profileDiv = document.querySelector('#profile-div-container');
   profileDiv.style.display = (view === 'profile') ? 'block' : 'none';
 
+  // only show post form 
   const postFormDiv = document.querySelector('#post-form-div');
   postFormDiv.style.display = (view === 'index') ? 'block' : 'none';
 
@@ -79,6 +81,8 @@ function addPostToDOM(context) {
   // add a like btn if the user is signed in
   if (context.user) {
     const likers = context.post.liked_by;
+
+    // set like btn state according to whether user likes post
     let likeButtonState = 'like';
     likers.forEach(liker => {
       if (liker === context.user) likeButtonState = 'unlike';
@@ -104,6 +108,7 @@ function addPostToDOM(context) {
   if (context.position === 'end') {
     document.querySelector('#post-display-div').append(post);
   } else {
+    // trigger fade-in animation
     post.style.animationName = 'fade-in';
     post.style.animationDuration = '1s';
     document.querySelector('#post-display-div').prepend(post);
@@ -111,13 +116,14 @@ function addPostToDOM(context) {
 }
 
 function add_profile_to_DOM(contents) {
-
   const profile = generateProfile(contents);
   
   // add listener to follow button (follows/unfollows on click)
   const followButton = profile.querySelector("#follow-button")
-  followButton.addEventListener('click', () => onClickFollowButton(contents))
-
+  if (followButton) {
+    followButton.addEventListener('click', () => onClickFollowButton(contents))
+  }
+  
   // replace old profile HTML with new
   document.querySelector("#profile-div-container").innerHTML = "";
   document.querySelector("#profile-div-container").appendChild(profile);
@@ -189,6 +195,7 @@ function onClickFollowButton(contents) {
   fetch(`user/${contents['username']}/follow`)
 
   // use JSON response to re-generate profile from new data in DB
+  // TODO: perhaps only updating follow btn state & follower/ing counters would be more efficient
   .then(response => response.json())
   .then(data => {
     add_profile_to_DOM(data);
@@ -202,11 +209,7 @@ function onClickLikeButton(post) {
   fetch(`post/${post.id}/like`, {
     method: 'PUT',
     credentials: 'same-origin',
-    headers:{
-      'Accept': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-      'X-CSRFToken' : csrftoken,
-    },
+    headers: fetchHeaders(csrftoken),
     body: JSON.stringify({
       'state' : likeBtnState
     })

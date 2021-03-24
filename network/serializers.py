@@ -5,7 +5,7 @@ class PostSerializer(serializers.ModelSerializer):
 
   author = serializers.StringRelatedField()
   liked_by = serializers.StringRelatedField(many=True)
-  timestamp = serializers.DateTimeField(format="%I:%M %p - %A %d %B %Y")
+  timestamp = serializers.DateTimeField(format="%I:%M %p, %a %d %B %Y")
 
   class Meta:
     model = Post

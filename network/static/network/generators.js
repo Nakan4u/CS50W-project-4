@@ -1,7 +1,7 @@
 export function generateEditButton() {
   const button = document.createElement('button');
   button.type = "button";
-  button.className = "edit-btn btn btn-secondary";
+  button.className = "d-inline-block float-right edit-btn btn btn-secondary";
   button.innerHTML = "Edit";
   return button;
 }
@@ -17,6 +17,7 @@ export function generateLikeButton(label, count) {
   likeCounter.innerHTML = `${count}`
 
   const likeDiv = document.createElement('div');
+  likeDiv.className = "d-inline-block"
   likeDiv.appendChild(button);
   button.appendChild(likeCounter);
   return likeDiv;
@@ -27,8 +28,8 @@ export function generatePost(context) {
   post.className = "post card";
   post.id = `${context.post.id}`;
   post.innerHTML = `
-    <div class="post-body card-body">
-      <h5 class="post-title card-title">${context.post.author}</h5>
+    <div class="post-body card-body px-4 py-2">
+      <h3 class="post-title card-title">${context.post.author}</h3>
       <h6 class="card-subtitle mb-2 text-muted">${context.post.timestamp}</h6>
       <p class="card-text">${context.post.message}</p>
       <textarea class="card-text-editor form-control" style="display:none"></textarea>
@@ -65,11 +66,14 @@ export function generateProfile(contents) {
     
   `;
 
-  const followButton = document.createElement('button');
-  followButton.innerHTML = contents['is_followed'] ? 'Unfollow' : 'Follow';
-  followButton.id = "follow-button";
-  followButton.className = "button btn btn-primary";
-  profile.appendChild(followButton);
+  // only add follow button user is signed in and is not the owner of the profile
+  if (contents.requested_by && contents.requested_by !== contents.username) {
+    const followButton = document.createElement('button');
+    followButton.innerHTML = contents['is_followed'] ? 'Unfollow' : 'Follow';
+    followButton.id = "follow-button";
+    followButton.className = "button btn btn-primary";
+    profile.appendChild(followButton);
+  }
 
   return profile;
 }

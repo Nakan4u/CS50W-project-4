@@ -37,3 +37,6 @@ class Relationship(models.Model):
                                 related_name='relationships_to')
 
     status = models.IntegerField(choices=RELATIONSHIP_STATUSES)
+
+    def __str__(self):
+        return f'{self.from_user.username} likes {self.to_user.username}'
